@@ -12,8 +12,11 @@ public class PlayerController : NetworkBehaviour {
     private Rigidbody2D m_Rb;
 
     private float m_MovementSpeed = 100f;
-    private float m_RotationSpeedTop = 100f;
-    private float m_RotationSpeedBot = 10f;
+
+    private float m_FireCD = 0.2f;
+    private float m_NextFire = 0f;
+
+    public GameObject _BulletPrefab;
 
     public override void OnStartClient()
     {
@@ -56,11 +59,17 @@ public class PlayerController : NetworkBehaviour {
         //Movement
         movementDirection.x = Input.GetAxis("HorizontalMove");
         movementDirection.y = Input.GetAxis("VerticalMove");
+        movementDirection.Normalize();
         //Aim
         aimDirection.x = Input.GetAxis("HorizontalAim");
         aimDirection.y = Input.GetAxis("VerticalAim");
-        //Debug.Log(movementDirection);
-        //Debug.Log(aimDirection);
+        aimDirection.Normalize();
+        //buttons
+        if (Input.GetAxis("Fire") < -0.75f && m_NextFire < Time.time)
+        {
+            m_NextFire = Time.time + m_FireCD;
+            CmdFire();
+        }
     }
 
     private void Aim()
@@ -95,6 +104,27 @@ public class PlayerController : NetworkBehaviour {
             m_Bot.eulerAngles = legsRotation;          
         }        
     }
+
+    
+    [Command]
+    void CmdFire()
+    {
+        // Create the Bullet from the Bullet Prefab
+        var bullet = (GameObject)Instantiate(
+            _BulletPrefab,
+            m_Top.position,
+            m_Top.rotation);
+
+        // Add velocity to the bullet
+        bullet.GetComponent<Rigidbody2D>().velocity = bullet.transform.right * 10f;
+
+        // Spawn the bullet on the Clients
+        NetworkServer.Spawn(bullet);
+
+        // Destroy the bullet after 2 seconds
+        Destroy(bullet, 2.0f);
+    }
+
 
     #endregion
 }
