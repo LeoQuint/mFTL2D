@@ -10,6 +10,7 @@ public class PlayerController : NetworkBehaviour {
     private Transform m_Bot;
 
     private Rigidbody2D m_Rb;
+    private GameObject m_Camera;
 
     private float m_MovementSpeed = 100f;
 
@@ -17,12 +18,14 @@ public class PlayerController : NetworkBehaviour {
     private float m_NextFire = 0f;
 
     public GameObject _BulletPrefab;
+    public GameObject _PlayerCamPrefab;
 
     public override void OnStartClient()
     {
-
-
-
+        Debug.Log("Client started.");
+        GameObject c = Instantiate(_PlayerCamPrefab, transform.position, Quaternion.identity) as GameObject;
+        m_Camera = c;
+        m_Camera.GetComponent<PlayerCam>().m_Target = transform;
     }
 
     private void Awake()
@@ -34,6 +37,10 @@ public class PlayerController : NetworkBehaviour {
 
     private void Update()
     {
+        if (!isLocalPlayer)
+        {
+            return;
+        }
         GetInput();
 
     }
@@ -76,7 +83,6 @@ public class PlayerController : NetworkBehaviour {
     {
         if (aimDirection.y != 0 || aimDirection.x != 0)
         {
-            //Debug.Log(Mathf.Atan2(aimDirection.y, aimDirection.x) * 180 / Mathf.PI);
             m_Top.eulerAngles = new Vector3(0, 0, Mathf.Atan2(aimDirection.y, aimDirection.x) * 180 / Mathf.PI);
             armsRotation = m_Top.eulerAngles;
         }
@@ -95,7 +101,6 @@ public class PlayerController : NetworkBehaviour {
     {
         if (movementDirection.y != 0 || movementDirection.x != 0)
         {
-            //Debug.Log(Mathf.Atan2(movementDirection.y, movementDirection.x) * 180 / Mathf.PI);
             m_Bot.eulerAngles = new Vector3(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * 180 / Mathf.PI);
             legsRotation = m_Bot.eulerAngles;          
         }
@@ -105,7 +110,11 @@ public class PlayerController : NetworkBehaviour {
         }        
     }
 
-    
+
+
+    #endregion
+
+    #region Commands
     [Command]
     void CmdFire()
     {
@@ -124,7 +133,5 @@ public class PlayerController : NetworkBehaviour {
         // Destroy the bullet after 2 seconds
         Destroy(bullet, 2.0f);
     }
-
-
     #endregion
 }
